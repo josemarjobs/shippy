@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
 	pb "github.com/josemarjobs/shipper/consignment-service/proto/consignment"
 	"google.golang.org/grpc"
@@ -28,18 +28,17 @@ func parseFile(file string) (*pb.Consignment, error) {
 }
 
 func main() {
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	file := flag.String("file", defaultFilename, "default json file to post")
+	host := flag.String("server", address, "default server url")
+	flag.Parse()
+
+	conn, err := grpc.Dial(*host, grpc.WithInsecure())
 	fatalIfError(err, "failed to connect: %v\n", err)
 	defer conn.Close()
 
 	client := pb.NewShippingServiceClient(conn)
 
-	file := defaultFilename
-	if len(os.Args) > 1 {
-		file = os.Args[1]
-	}
-
-	consignment, err := parseFile(file)
+	consignment, err := parseFile(*file)
 	fatalIfError(err, "could not parse file: %v\n", err)
 
 	r, err := client.CreateConsignment(context.Background(), consignment)
