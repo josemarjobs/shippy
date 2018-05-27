@@ -1,20 +1,16 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 
-	pb "github.com/josemarjobs/shipper/consignment-service/proto/consignment"
-	"google.golang.org/grpc"
-)
+	"golang.org/x/net/context"
 
-const (
-	address         = "localhost:50051"
-	defaultFilename = "consignment.json"
+	pb "github.com/josemarjobs/shipper/consignment-service/proto/consignment"
+	microclient "github.com/micro/go-micro/client"
+	"github.com/micro/go-micro/cmd"
 )
 
 func parseFile(file string) (*pb.Consignment, error) {
@@ -28,17 +24,11 @@ func parseFile(file string) (*pb.Consignment, error) {
 }
 
 func main() {
-	file := flag.String("file", defaultFilename, "default json file to post")
-	host := flag.String("server", address, "default server url")
-	flag.Parse()
+	cmd.Init()
 
-	conn, err := grpc.Dial(*host, grpc.WithInsecure())
-	fatalIfError(err, "failed to connect: %v\n", err)
-	defer conn.Close()
+	client := pb.NewShippingServiceClient("go.micro.srv.consignment", microclient.DefaultClient)
 
-	client := pb.NewShippingServiceClient(conn)
-
-	consignment, err := parseFile(*file)
+	consignment, err := parseFile("consignment.json")
 	fatalIfError(err, "could not parse file: %v\n", err)
 
 	r, err := client.CreateConsignment(context.Background(), consignment)
