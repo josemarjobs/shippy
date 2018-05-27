@@ -1,5 +1,8 @@
 build:
-	GOOS=linux GOARCH=amd64 go build
+	GOOS=linux GOARCH=amd64 go build -o consignment-cli *.go
+	docker build -t josemarjobs/consignment-cli .
+
+image:
 	docker build -t josemarjobs/consignment-cli .
 
 run:

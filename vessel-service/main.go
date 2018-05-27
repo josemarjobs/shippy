@@ -1,49 +1,45 @@
 package main
 
 import (
-	"context"
-	"errors"
+	"fmt"
 	"log"
+	"os"
 
 	pb "github.com/josemarjobs/shipper/vessel-service/proto/vessel"
 	micro "github.com/micro/go-micro"
 )
 
-type Repository interface {
-	FindAvailable(*pb.Specification) (*pb.Vessel, error)
-}
-type VesselRepo struct {
-	vessels []*pb.Vessel
-}
+const (
+	defaultDbHost = "localhost:27017"
+)
 
-func (repo *VesselRepo) FindAvailable(spec *pb.Specification) (*pb.Vessel, error) {
-	for _, vessel := range repo.vessels {
-		if spec.Capacity <= vessel.Capacity && spec.MaxWeight <= vessel.MaxWeight {
-			return vessel, nil
-		}
+func createDummyData(repo Repository) {
+	defer repo.Close()
+
+	vessels := []*pb.Vessel{
+		&pb.Vessel{Id: "vessel01", Name: "Titanic", MaxWeight: 2000000, Capacity: 500},
 	}
-	return nil, errors.New("no vessel found with that spec")
-}
 
-type service struct {
-	repo Repository
-}
-
-func (s *service) FindAvailable(ctx context.Context, req *pb.Specification, res *pb.Response) error {
-	vessel, err := s.repo.FindAvailable(req)
-	if err != nil {
-		return err
+	fmt.Println("Creating dummy data")
+	for _, v := range vessels {
+		repo.Create(v)
+		fmt.Printf("created - %v\n", v)
 	}
-	res.Vessel = vessel
-	return nil
 }
 
 func main() {
-	vessels := []*pb.Vessel{
-		&pb.Vessel{Id: "vessel01", Name: "Boaty Mcboatface", MaxWeight: 2000000, Capacity: 500},
-	}
 
-	repo := &VesselRepo{vessels}
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = defaultDbHost
+	}
+	session, err := CreateSession(dbHost)
+	if err != nil {
+		log.Fatalf("unable to connect to mongo: %v", err)
+	}
+	defer session.Close()
+
+	createDummyData(&VesselRepo{session.Copy()})
 
 	srv := micro.NewService(
 		micro.Name("go.micro.srv.vessel"),
@@ -52,7 +48,7 @@ func main() {
 
 	srv.Init()
 
-	pb.RegisterVesselServiceHandler(srv.Server(), &service{repo})
+	pb.RegisterVesselServiceHandler(srv.Server(), &service{session})
 
 	if err := srv.Run(); err != nil {
 		log.Println(err)

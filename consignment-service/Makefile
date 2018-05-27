@@ -6,6 +6,7 @@ micro:
 
 build:
 	GOOS=linux GOARCH=amd64 go build -o consignment-service *.go
+	docker build -t josemarjobs/consignment-service .
 
 image:
 	docker build -t josemarjobs/consignment-service .

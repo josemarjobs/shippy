@@ -1,7 +1,5 @@
 build:
 	protoc -I . ./proto/vessel/vessel.proto --go_out=plugins=micro:./
-
-build-image:
 	docker build -t josemarjobs/vessel-service .
 
 run:

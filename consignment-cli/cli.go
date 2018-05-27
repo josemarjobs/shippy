@@ -15,6 +15,7 @@ import (
 
 func parseFile(file string) (*pb.Consignment, error) {
 	var consignment *pb.Consignment
+
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -31,7 +32,7 @@ func main() {
 	consignment, err := parseFile("consignment.json")
 	fatalIfError(err, "could not parse file: %v\n", err)
 
-	r, err := client.CreateConsignment(context.Background(), consignment)
+	r, err := client.CreateConsignment(context.TODO(), consignment)
 	fatalIfError(err, "could not create consignment: %v\n", err)
 
 	fmt.Printf("Created: %v\nConsignment: %+v\n", r.Created, r.GetConsignment())
