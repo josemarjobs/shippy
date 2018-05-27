@@ -4,8 +4,10 @@ protobuf:
 micro:
 	protoc -I . ./proto/consignment/consignment.proto --micro_out=. --go_out=.
 
-build-image:
-	GOOS=linux GOARCH=amd64 go build
+build:
+	GOOS=linux GOARCH=amd64 go build -o consignment-service *.go
+
+image:
 	docker build -t josemarjobs/consignment-service .
 
 run:
